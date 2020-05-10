@@ -111,38 +111,63 @@ const BoardTest = () => {
 
     return (
     <GameChessboardStyled className="game-chessboard">
-        {
-            board.map((row, rowIndex) => {
-                return row.map((tile, columnIndex) => {
-                    return (
+        <ul className="chessboard__chessboard-tiles">
+
+        {board.map((row, rowIndex) => {
+            return row.map((tile, columnIndex) => {
+                return (
+                <li 
+                    className={`chessboard__tile ${legalMoves.length && styleLegalMove([rowIndex, columnIndex])}`}
+                    id={[rowIndex, columnIndex]} key={`${rowIndex}-${columnIndex}`} 
+                    onClick={() => movePiece([rowIndex, columnIndex])}>
                     <div 
-                        id={[rowIndex, columnIndex]} key={`${rowIndex}-${columnIndex}`} 
+                        class="chessboard__actual-piece">
 
-                        onClick={() => movePiece([rowIndex, columnIndex])}
 
-                        className={`tile ${legalMoves.length && styleLegalMove([rowIndex, columnIndex])}`}>
                         {tile}
-                    </div>)
-                })
+
+                    </div>
+                </li>)
             })
-        }
+        })}
+        </ul>
     </GameChessboardStyled>
     );
 }
 
 const GameChessboardStyled = styled.div`
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: 5px;
 
-    .tile {
+    .chessboard__chessboard-tiles {
+        /* background-color: black; */
+        width: 100%;
+        max-width: 640px;
+        height: calc(100vw - 3.05rem);
+        max-height: 640px;
+        display: grid;
+        /* grid-template-columns: repeat(8, minmax(3rem, calc(100vw/16)));
+        grid-template-rows: repeat(8, minmax(3rem, calc(100vw/16))); */
+        grid-template-columns: repeat(8, 1fr);
+        grid-template-rows: repeat(8, 1fr);
+        gap: 2px;
+    }
+    .chessboard__tile {
         padding: 5px;
         background-color: red;
-        text-align: center;
+        width: 100%;
+        max-width: 80px;
+        height: 100%;
+        max-height: 80px;
+        /* min-height: 40.13px; */
     }
     .legal-tile {
         background-color: yellow;
+    }
+    .chessboard__actual-piece {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 `;
 
