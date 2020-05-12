@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import styled from "styled-components";
 import io from "socket.io-client";
 import { useLocation as location } from "react-router-dom";
@@ -11,9 +11,13 @@ import GameChessboard from "../components/game-chessboard.component";
 import GameFlow from "../components/game-flow.component";
 import BoardTest from "../components/board-test.component";
 
+import { UserContext } from "../context/user.context";
+
 
 
 const Game = () => {
+
+    const { user } = useContext(UserContext);
 
     return (
     <GamePageStyled>
@@ -38,7 +42,9 @@ const Game = () => {
 
 
         <div className="main-game__game-chat-wrapper">
-            <GameChat />
+            <GameChat 
+                currentUser={user}
+            />
         </div>
 
     </GamePageStyled>

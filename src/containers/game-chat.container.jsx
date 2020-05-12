@@ -3,14 +3,19 @@ import styled from "styled-components";
 import io from "socket.io-client";
 import { useParams as params } from "react-router-dom";
 
+let counter = 0;
+let socket;
 
-const GameChat = () => {
 
-    const socket = io("localhost:8000");
+
+const GameChat = ({currentUser}) => {
+
     const { gameid } = params();
+
 
     const [ playersCommunication, setPlayersCommunication ] = useState([]);
     const [ playerMessage, setPlayerMessage ] = useState("");
+
     const [ playerMessageToObservers, setPlayerMessageToObservers ] = useState("");
     const [ observersCommunication, setObserversCommunication ] = useState([]);
     const [ playersGameRoom, setPlayersGameRoom ] = useState("");
@@ -18,14 +23,26 @@ const GameChat = () => {
 
 
     useEffect(() => {
-        const { id: socketId } = socket;
-        socket.emit("join", { socketId, user: "karlo", room: gameid }, (data) => {
-            console.log(data);
-        });
-        socket.on("backendPlayersMessage", (data, callback) => {
-            console.log(data);
-            setPlayersCommunication(prevComm => [ ...prevComm, data ]);
+
+        socket = io("localhost:8000");
+        
+        socket.on("connect", () => {
+            const { id: socketId } = socket;
+            console.log("socketId on connecting client:",  socketId)
+
+
+
+            socket.emit("join", { socketId, user: currentUser, room: gameid }, (data) => {
+                console.log(data);
+            });
+            socket.on("backendPlayersMessage", ({user, message}, callback) => {
+                console.log("here we are", message);
+                setPlayersCommunication(prevComm => [ ...prevComm, {user, message} ]);
+            })
+
         })
+        
+
         return () => {
             socket.emit("disconnect", {}, (data) => {
                 console.log(data);
@@ -35,13 +52,20 @@ const GameChat = () => {
     }, []);
 
     useEffect(() => {
+        console.log(playersCommunication);
+    }, [playersCommunication]);
 
+    // const handleSubmitMessage = () => {};
 
-    }, []);
+    const sendMessage = (e) => {
+        e.preventDefault();
 
-    const sendMessage = () => {
-        socket.emit("playersMessage", { user: "Karlo", message: "This is test message"}, (data) => {
-            console.log(data);
+        console.log("socket", socket);
+        socket.emit("playersMessage", { 
+            socketIdd: socket.id,
+            user: currentUser, 
+            room: gameid,
+            message: playerMessage,
         }) 
     }
 
@@ -50,8 +74,8 @@ const GameChat = () => {
             <div className="chat__selectors">
                 <div className="chat__selector-players">
                     <span 
-                        onClick={sendMessage}
-                        className="chat__label">Players Chat</span>
+                        
+                        className="chat__label">Players Chat - {currentUser} </span>
                     <span className="chat__new-msg-number"> (3)</span>
                     <span className="chat__mobile-expand">>></span>
                 </div>
@@ -69,7 +93,8 @@ const GameChat = () => {
                     {
                         playersCommunication.map(({ user, message }) => {
                             return (
-                            <li className="message player">
+                            <li   
+                            className={`message ${user === currentUser? "player": null}`}>
                                 <span className="message__author">{user}</span>
                                 <span className="message__text">{message}</span>
                             </li>
@@ -77,13 +102,27 @@ const GameChat = () => {
                         })
                     }
                     </ul>
-                    <form className="message-form">
+
+
+                    <form 
+                        className="message-form"
+                        onSubmit={sendMessage}
+                        >
                         <label htmlFor="new-message" hidden>New message</label>
-                        <textarea className="message-form__message-input" placeholder="message"
-                        rows="1"/>
+                        <textarea 
+                            className="message-form__message-input" 
+                            placeholder="message"
+                            rows="1"
+                            onChange={(e) => setPlayerMessage(e.target.value)}
+                            />
                         <button className="message-form__message-send" type="submit">Send</button>
                     </form>
+
+
                 </div>
+
+
+
 
                 <div className="communication__global">
                     <ul className="messages">
@@ -163,6 +202,8 @@ const GameChatStyled = styled.div`
         width: auto;
         max-width: 75%;
         margin: 0.5rem 0;
+        align-self: flex-start;
+        /* text-align: left; */
     }
     .message__author {
         color: white;
@@ -177,7 +218,7 @@ const GameChatStyled = styled.div`
     }
     .message.player {
         align-self: flex-end;
-        text-align: right;
+        text-align: left;
     }
 
     .message-form {
