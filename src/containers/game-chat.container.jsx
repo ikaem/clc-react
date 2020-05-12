@@ -1,12 +1,57 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
+import io from "socket.io-client";
+import { useParams as params } from "react-router-dom";
+
 
 const GameChat = () => {
+
+    const socket = io("localhost:8000");
+    const { gameid } = params();
+
+    const [ playersCommunication, setPlayersCommunication ] = useState([]);
+    const [ playerMessage, setPlayerMessage ] = useState("");
+    const [ playerMessageToObservers, setPlayerMessageToObservers ] = useState("");
+    const [ observersCommunication, setObserversCommunication ] = useState([]);
+    const [ playersGameRoom, setPlayersGameRoom ] = useState("");
+    const [ observersGameRoom, setObserversGameRoom ] = useState("");
+
+
+    useEffect(() => {
+        const { id: socketId } = socket;
+        socket.emit("join", { socketId, user: "karlo", room: gameid }, (data) => {
+            console.log(data);
+        });
+        socket.on("backendPlayersMessage", (data, callback) => {
+            console.log(data);
+            setPlayersCommunication(prevComm => [ ...prevComm, data ]);
+        })
+        return () => {
+            socket.emit("disconnect", {}, (data) => {
+                console.log(data);
+            });
+            socket.off();
+        }
+    }, []);
+
+    useEffect(() => {
+
+
+    }, []);
+
+    const sendMessage = () => {
+        socket.emit("playersMessage", { user: "Karlo", message: "This is test message"}, (data) => {
+            console.log(data);
+        }) 
+    }
+
     return (
         <GameChatStyled>
             <div className="chat__selectors">
                 <div className="chat__selector-players">
-                    <span className="chat__label">Players Chat</span>
+                    <span 
+                        onClick={sendMessage}
+                        className="chat__label">Players Chat</span>
                     <span className="chat__new-msg-number"> (3)</span>
                     <span className="chat__mobile-expand">>></span>
                 </div>
@@ -20,22 +65,17 @@ const GameChat = () => {
             <div className="chat__communication">
                 <div className="communication__players">
                     <ul className="messages">
-                        <li className="message player">
-                            <span className="message__author">Karlo</span>
-                            <span className="message__text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Natus totam in quas cumque, quidem odit libero enim earum quae.</span>
-                        </li>
-                        <li className="message">
-                            <span className="message__author">Karlo</span>
-                            <span className="message__text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Natus totam in quas cumque, quidem odit libero enim earum quae.</span>
-                        </li>
-                        <li className="message player">
-                            <span className="message__author">Karlo</span>
-                            <span className="message__text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Natus totam in quas cumque, quidem odit libero enim earum quae.</span>
-                        </li>
-                        <li className="message">
-                            <span className="message__author">Karlo</span>
-                            <span className="message__text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Natus totam in quas cumque, quidem odit libero enim earum quae.</span>
-                        </li>
+
+                    {
+                        playersCommunication.map(({ user, message }) => {
+                            return (
+                            <li className="message player">
+                                <span className="message__author">{user}</span>
+                                <span className="message__text">{message}</span>
+                            </li>
+                            )
+                        })
+                    }
                     </ul>
                     <form className="message-form">
                         <label htmlFor="new-message" hidden>New message</label>
@@ -119,7 +159,9 @@ const GameChatStyled = styled.div`
     }
 
     .message {
-        width: 75%;
+        /* width: 75%; */
+        width: auto;
+        max-width: 75%;
         margin: 0.5rem 0;
     }
     .message__author {
